@@ -31,6 +31,7 @@ PushbackFlorian::PushbackFlorian() : EuroScopePlugIn::CPlugIn(
 	this->RegisterTagItemFunction("Line Clear", TAG_FUNC_LINE_CLEAR);
 
 	this->debug = false;
+	this->shouldSetPushGroundState = true;
 
 	this->LoadSettings();
 }
@@ -51,14 +52,42 @@ bool PushbackFlorian::OnCompileCommand(const char* sCommandLine)
 	if (args[0] == ".pbf") {
 		if (args.size() == 1) {
 			std::ostringstream msg;
-			msg << "Version " << PLUGIN_VERSION << " loaded. Available commands: debug, reset";
+			msg << "Version " << PLUGIN_VERSION << " loaded. Available commands: debug, push, reset";
 
 			this->LogMessage(msg.str());
 
 			return true;
 		}
 
-		if (args[1] == "reset") {
+		if (args[1] == "debug") {
+			if (this->debug) {
+				this->LogMessage("Disabling debug mode", "Config");
+			}
+			else {
+				this->LogMessage("Enabling debug mode", "Config");
+			}
+
+			this->debug = !this->debug;
+
+			this->SaveSettings();
+
+			return true;
+		}
+		else if (args[1] == "push") {
+			if (this->shouldSetPushGroundState) {
+				this->LogMessage("No longer setting push ground state on direction or line assignment", "Config");
+			}
+			else {
+				this->LogMessage("Setting push ground state on direction or line assignment", "Config");
+			}
+
+			this->shouldSetPushGroundState = !this->shouldSetPushGroundState;
+
+			this->SaveSettings();
+
+			return true;
+		}
+		else if (args[1] == "reset") {
 			this->LogMessage("Resetting plugin state", "Config");
 			
 			this->trackedDirection.clear();
@@ -195,6 +224,8 @@ void PushbackFlorian::SetDirection(EuroScopePlugIn::CFlightPlan& fp, std::string
 	this->trackedDirection[fp.GetCallsign()] = direction;
 
 	if (broadcast) {
+		this->SetPushGroundState(fp);
+
 		std::ostringstream msg;
 		msg << SCRATCH_PAD_PREFIX << SCRATCH_PAD_DELIMITER
 			<< SCRATCH_PAD_DIRECTION << SCRATCH_PAD_DELIMITER
@@ -209,6 +240,8 @@ void PushbackFlorian::SetLine(EuroScopePlugIn::CFlightPlan& fp, COLORREF line, b
 	this->trackedLine[fp.GetCallsign()] = line;
 
 	if (broadcast) {
+		this->SetPushGroundState(fp);
+
 		for (auto it = this->ScratchPadLineMap.begin(); it != this->ScratchPadLineMap.end(); ++it) {
 			if (it->second == line) {
 				std::ostringstream msg;
@@ -222,6 +255,36 @@ void PushbackFlorian::SetLine(EuroScopePlugIn::CFlightPlan& fp, COLORREF line, b
 			}
 		}
 	}
+}
+
+void PushbackFlorian::SetPushGroundState(EuroScopePlugIn::CFlightPlan& fp)
+{
+	if (!this->shouldSetPushGroundState) {
+		return;
+	}
+
+	if (!fp.IsValid()) {
+		return;
+	}
+
+	if (!fp.GetTrackingControllerIsMe() && strcmp(fp.GetTrackingControllerId(), "") != 0) {
+		return;
+	}
+
+	std::string gs = fp.GetGroundState();
+
+	if (gs == "PUSH") {
+		return;
+	}
+	else if (gs != "" && gs != "ST-UP") {
+		std::ostringstream msg;
+		msg << "Aircraft already has ground state \"" << gs << "\", not overwriting with push state";
+		this->LogDebugMessage(msg.str(), fp.GetCallsign());
+
+		return;
+	}
+
+	this->BroadcastScratchPad(fp, "PUSH");
 }
 
 void PushbackFlorian::ClearDirection(EuroScopePlugIn::CFlightPlan& fp, bool broadcast)
@@ -280,7 +343,7 @@ void PushbackFlorian::LoadSettings()
 	if (settings) {
 		std::vector<std::string> splitSettings = split(settings, SETTINGS_DELIMITER);
 
-		if (splitSettings.size() < 1) {
+		if (splitSettings.size() < 2) {
 			this->LogMessage("Invalid saved settings found, reverting to default.");
 
 			this->SaveSettings();
@@ -289,6 +352,7 @@ void PushbackFlorian::LoadSettings()
 		}
 
 		std::istringstream(splitSettings[0]) >> this->debug;
+		std::istringstream(splitSettings[1]) >> this->shouldSetPushGroundState;
 
 		this->LogDebugMessage("Successfully loaded settings.");
 	}
@@ -300,7 +364,9 @@ void PushbackFlorian::LoadSettings()
 void PushbackFlorian::SaveSettings()
 {
 	std::ostringstream ss;
-	ss << this->debug;
+	ss << this->debug << SETTINGS_DELIMITER
+		<< this->shouldSetPushGroundState;
+
 
 	this->SaveDataToSettings(PLUGIN_NAME, "Settings", ss.str().c_str());
 }

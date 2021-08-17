@@ -53,6 +53,8 @@ At the moment, `Pushback Florian` supports the following additional pushback sta
 - Direction: allows for pushback direction ("facing") to be tracked and shared with other controllers.
 - Line: allows for (taxiway) line assigned for pushback to be tracked and shared with other controllers.
 
+If enabled (see [Toggle setting of pushback state](#toggle-setting-of-pushback-state)), `Pushback Florian` will automatically set the `PUSH` ground state for an aircraft once a direction or line has been assigned. Note that the ground state will only be updated if the aircraft currently has no state assigned or has been cleared for startup (`ST-UP`).
+
 ### Tag items
 
 Tag items are used to display information about flightplans in aircraft lists such as the departure list.  
@@ -130,6 +132,16 @@ Chat commands allow more fine-grained control of `Pushback Florian`'s behavior a
 `.pbf debug`
 
 Toggles debug logging, displaying more messages about the internal state.
+
+This setting will be saved to the EuroScope settings upon exit.
+
+#### Toggle setting of pushback state
+
+`.pbf push`
+
+Toggles automatic setting of pushback ground state.
+
+If enabled (default), `Pushback Florian` will automatically set the `PUSH` ground state for an aircraft after a direction or line has been assigned.
 
 This setting will be saved to the EuroScope settings upon exit.
 

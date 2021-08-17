@@ -26,11 +26,13 @@ private:
 	static std::map<std::string, COLORREF> ScratchPadLineMap;
 
 	bool debug;
+	bool shouldSetPushGroundState;
 	std::map<std::string, std::string> trackedDirection;
 	std::map<std::string, COLORREF> trackedLine;
 
 	void SetDirection(EuroScopePlugIn::CFlightPlan& fp, std::string direction, bool broadcast = false);
 	void SetLine(EuroScopePlugIn::CFlightPlan& fp, COLORREF line, bool broadcast = false);
+	void SetPushGroundState(EuroScopePlugIn::CFlightPlan& fp);
 	void ClearDirection(EuroScopePlugIn::CFlightPlan& fp, bool broadcast = false);
 	void ClearLine(EuroScopePlugIn::CFlightPlan& fp, bool broadcast = false);
 	void BroadcastScratchPad(EuroScopePlugIn::CFlightPlan& fp, std::string msg);
