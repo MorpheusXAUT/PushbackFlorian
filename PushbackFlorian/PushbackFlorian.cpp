@@ -264,19 +264,24 @@ void PushbackFlorian::SetPushGroundState(EuroScopePlugIn::CFlightPlan& fp)
 	}
 
 	if (!fp.IsValid()) {
+		this->LogDebugMessage("Aircraft has invalid flightplan, cannot overwrite push state", fp.GetCallsign());
 		return;
 	}
 
 	if (!fp.GetTrackingControllerIsMe() && strcmp(fp.GetTrackingControllerId(), "") != 0) {
+		std::ostringstream msg;
+		msg << "Aircraft is tracked by different controller (ID \"" << fp.GetTrackingControllerId() << "\"), cannot overwrite push state";
+		this->LogDebugMessage(msg.str(), fp.GetCallsign());
 		return;
 	}
 
 	std::string gs = fp.GetGroundState();
 
 	if (gs == "PUSH") {
+		this->LogDebugMessage("Aircraft already has ground state \"PUSH\", no need to overwrite", fp.GetCallsign());
 		return;
 	}
-	else if (gs != "" && gs != "ST-UP") {
+	else if (gs != "" && gs != "ST-UP" && gs != "STUP" && gs != "STU" && gs != "NST") { // different versions of "startup" as well as "not started" ground state
 		std::ostringstream msg;
 		msg << "Aircraft already has ground state \"" << gs << "\", not overwriting with push state";
 		this->LogDebugMessage(msg.str(), fp.GetCallsign());

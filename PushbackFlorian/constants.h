@@ -3,9 +3,9 @@
 #include <regex>
 
 constexpr auto PLUGIN_NAME = "Pushback Florian";
-constexpr auto PLUGIN_VERSION = "1.1.0";
+constexpr auto PLUGIN_VERSION = "1.1.1";
 constexpr auto PLUGIN_AUTHOR = "Nick Mueller";
-constexpr auto PLUGIN_LICENSE = "(c) 2021, MIT License";
+constexpr auto PLUGIN_LICENSE = "(c) 2021-2022, MIT License";
 
 constexpr auto SETTINGS_DELIMITER = '|';
 
